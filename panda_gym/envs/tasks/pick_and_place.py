@@ -16,6 +16,8 @@ class PickAndPlace(Task):
         goal_xy_range: float = 0.3,
         goal_z_range: float = 0.2,
         obj_xy_range: float = 0.3,
+        table_length: float = 1.1,
+        table_offset: float = -0.3,
     ) -> None:
         super().__init__(sim)
         self.reward_type = reward_type
@@ -25,13 +27,15 @@ class PickAndPlace(Task):
         self.goal_range_high = np.array([goal_xy_range / 2, goal_xy_range / 2, goal_z_range])
         self.obj_range_low = np.array([-obj_xy_range / 2, -obj_xy_range / 2, 0])
         self.obj_range_high = np.array([obj_xy_range / 2, obj_xy_range / 2, 0])
+        self.table_length = table_length
+        self.table_offset = table_offset
         with self.sim.no_rendering():
             self._create_scene()
 
     def _create_scene(self) -> None:
         """Create the scene."""
         self.sim.create_plane(z_offset=-0.4)
-        self.sim.create_table(length=1.1, width=0.7, height=0.4, x_offset=-0.3)
+        self.sim.create_table(length=self.table_length, width=0.7, height=0.4, x_offset=self.table_offset)
         self.sim.create_box(
             body_name="object",
             half_extents=np.ones(3) * self.object_size / 2,

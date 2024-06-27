@@ -28,17 +28,18 @@ class PyBulletRobot(ABC):
         action_space: spaces.Space,
         joint_indices: np.ndarray,
         joint_forces: np.ndarray,
+        fixed_base = True,
     ) -> None:
         self.sim = sim
         self.body_name = body_name
         with self.sim.no_rendering():
-            self._load_robot(file_name, base_position)
+            self._load_robot(file_name, base_position,fixed_base=fixed_base)
             self.setup()
         self.action_space = action_space
         self.joint_indices = joint_indices
         self.joint_forces = joint_forces
 
-    def _load_robot(self, file_name: str, base_position: np.ndarray) -> None:
+    def _load_robot(self, file_name: str, base_position: np.ndarray, fixed_base=True) -> None:
         """Load the robot.
 
         Args:
@@ -49,7 +50,7 @@ class PyBulletRobot(ABC):
             body_name=self.body_name,
             fileName=file_name,
             basePosition=base_position,
-            useFixedBase=True,
+            useFixedBase=fixed_base,
         )
 
     def setup(self) -> None:
