@@ -150,8 +150,8 @@ class PandaMobilePickAndPlaceEnv(RobotTaskEnv):
         render_roll: float = 0,
     ) -> None:
         sim = PyBullet(render_mode=render_mode, renderer=renderer)
-        robot = MobilePanda(sim, block_gripper=False, base_position=np.array([-2.0, 0.0, 0]), control_type=control_type)
-        task = PickAndPlace(sim, reward_type=reward_type,table_length=0.7,table_offset=0.0)
+        robot = MobilePanda(sim, block_gripper=False, base_position=np.array([-2.0, 0.0, -0.4]), control_type=control_type)
+        task = PickAndPlace(sim, reward_type=reward_type,table_length=0.7,table_offset=0.0,plane_Size=100)
         super().__init__(
             robot,
             task,

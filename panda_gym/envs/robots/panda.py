@@ -180,7 +180,7 @@ class MobilePanda(PyBulletRobot):
             action_space=action_space,
 
             joint_indices=np.array([2, 3, 4, 5, 8, 9, 10, 11, 12, 13, 14, 17, 18 ]),
-            joint_forces=np.array([100.0, 100.0, 100.0, 100.0, 87.0, 87.0, 87.0, 87.0, 12.0, 120.0, 120.0, 170.0, 170.0]),
+            joint_forces=np.array([70.0, 70.0, 70.0, 70.0, 87.0, 87.0, 87.0, 87.0, 12.0, 120.0, 120.0, 170.0, 170.0]),
             fixed_base = False,
         )
 
@@ -211,7 +211,7 @@ class MobilePanda(PyBulletRobot):
             fingers_width = self.get_fingers_width()
             target_fingers_width = fingers_width + fingers_ctrl
 
-        target_values = np.concatenate((5*wheels,target_arm_angles, [target_fingers_width / 2, target_fingers_width / 2]))
+        target_values = np.concatenate((wheels,target_arm_angles, [target_fingers_width / 2, target_fingers_width / 2]))
         self.control_robot(targets=target_values)
 
     def control_robot(self,targets):

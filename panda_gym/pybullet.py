@@ -610,7 +610,7 @@ class PyBullet:
         if spinning_friction is not None:
             self.set_spinning_friction(body=body_name, link=-1, spinning_friction=spinning_friction)
 
-    def create_plane(self, z_offset: float) -> None:
+    def create_plane(self, z_offset: float, size=3.0) -> None:
         """Create a plane. (Actually, it is a thin box.)
 
         Args:
@@ -618,7 +618,7 @@ class PyBullet:
         """
         self.create_box(
             body_name="plane",
-            half_extents=np.array([3.0, 3.0, 0.01]),
+            half_extents=np.array([size, size, 0.01]),
             mass=0.0,
             position=np.array([0.0, 0.0, z_offset - 0.01]),
             specular_color=np.zeros(3),
