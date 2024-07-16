@@ -170,7 +170,7 @@ class MobilePanda(PyBulletRobot):
         self.control_type = control_type
         n_action = 3 if self.control_type == "ee" else 7  # control (x, y z) if "ee", else, control the 7 joints
         n_action += 0 if self.block_gripper else 1
-        n_action += 4 #wheels
+        n_action += 2 # left and right wheels
         action_space = spaces.Box(-1.0, 1.0, shape=(n_action,), dtype=np.float32)
         super().__init__(
             sim,
@@ -185,7 +185,8 @@ class MobilePanda(PyBulletRobot):
         )
 
         self.fingers_indices = np.array([17, 18])
-        self.neutral_joint_values = np.array([0.00, 0.00, 0.00, 0.00, 0.00, 0.41, 0.00, -1.85, 0.00, 2.26, 0.79, 0.00, 0.00])
+        self.neutral_joint_values = np.array([0.00, 0.00, 0.00, 0.00, 0.00, -1.21, 0.00, -2.35, 0.00, 1.26, 0.79, 0.00, 0.00])
+
         self.ee_link = 19
         self.sim.set_lateral_friction(self.body_name, self.fingers_indices[0], lateral_friction=1.0)
         self.sim.set_lateral_friction(self.body_name, self.fingers_indices[1], lateral_friction=1.0)
@@ -195,8 +196,9 @@ class MobilePanda(PyBulletRobot):
     def set_action(self, action: np.ndarray) -> None:
         action = action.copy()  # ensure action don't change
         action = np.clip(action, self.action_space.low, self.action_space.high)
-        wheels = action[:4].copy()
-        action = action[4:].copy()
+        wheels = action[:2].copy()
+        wheels = self.throttle_to_wheel_speed(5*wheels[0],5*wheels[1])
+        action = action[2:].copy()
         if self.control_type == "ee":
             ee_displacement = action[:3]
             target_arm_angles = self.ee_displacement_to_target_arm_angles(ee_displacement)
@@ -264,22 +266,34 @@ class MobilePanda(PyBulletRobot):
         current_arm_joint_angles = np.array([self.get_joint_angle(joint=i+4) for i in range(7)])
         target_arm_angles = current_arm_joint_angles + arm_joint_ctrl
         return target_arm_angles
+    
+    def throttle_to_wheel_speed(self,t1,t2):
+        v1 = self.get_joint_velocity(joint=0)
+        v2 = self.get_joint_velocity(joint=1)
+        return np.array([v1+t1,v2+t2,v1+t1,v2+t2])
 
     def get_obs(self) -> np.ndarray:
         # end-effector position and velocity
         ee_position = np.array(self.get_ee_position())
         ee_velocity = np.array(self.get_ee_velocity())
+        bp = self.sim.get_base_position(self.body_name)
+        bo = self.sim.get_base_orientation(self.body_name)
+        bv = self.sim.get_base_angular_velocity(self.body_name)
+        bav = self.sim.get_base_velocity(self.body_name)
         # fingers opening
         if not self.block_gripper:
             fingers_width = self.get_fingers_width()
             observation = np.concatenate((ee_position, ee_velocity, [fingers_width]))
         else:
             observation = np.concatenate((ee_position, ee_velocity))
+        observation = np.concatenate((bp,bo,bv,bav,observation))
         return observation
 
     def reset(self) -> None:
         self.set_joint_neutral()
-        self.sim.set_base_pose(self.body_name, position=self.base_position, orientation=np.array([0.0, 0.0, 0.0]))
+        rand = (np.random.uniform(size=3)-0.5)
+        rand[2]=0
+        self.sim.set_base_pose(self.body_name, position=self.base_position+rand, orientation=np.array([0.0, 0.0, (np.random.uniform()-0.5)]))
 
 
     def set_joint_neutral(self) -> None:
