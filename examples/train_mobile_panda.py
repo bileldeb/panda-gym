@@ -4,7 +4,7 @@ from stable_baselines3 import DDPG, HerReplayBuffer
 import panda_gym
 import imageio
 
-env = gym.make("PandaMobilePickAndPlace-v3")
+env = gym.make("PandaMobilePickAndPlace-v3",render_mode = 'human')
 
 model = DDPG(policy="MultiInputPolicy", env=env, replay_buffer_class=HerReplayBuffer,
              replay_buffer_kwargs= {'n_sampled_goal':4},

@@ -167,8 +167,8 @@ class MobilePanda(PyBulletRobot):
     ) -> None:
         self.base_position = base_position if base_position is not None else np.zeros(3)
         self.block_gripper = block_gripper
-        self.control_type = control_type
-        n_action = 3 if self.control_type == "ee" else 7  # control (x, y z) if "ee", else, control the 7 joints
+        self.control_type = "joint"#control_type
+        n_action = 4 if self.control_type == "ee" else 7  # control (x, y z) if "ee", else, control the 7 joints
         n_action += 0 if self.block_gripper else 1
         n_action += 2 # left and right wheels
         action_space = spaces.Box(-1.0, 1.0, shape=(n_action,), dtype=np.float32)
@@ -179,15 +179,15 @@ class MobilePanda(PyBulletRobot):
             base_position=self.base_position,
             action_space=action_space,
 
-            joint_indices=np.array([2, 3, 4, 5, 8, 9, 10, 11, 12, 13, 14, 17, 18 ]),
+            joint_indices=np.array([2, 3, 4, 5, 9, 10, 11, 12, 13, 14, 15, 18, 19 ]),
             joint_forces=np.array([70.0, 70.0, 70.0, 70.0, 87.0, 87.0, 87.0, 87.0, 12.0, 120.0, 120.0, 170.0, 170.0]),
             fixed_base = False,
         )
 
-        self.fingers_indices = np.array([17, 18])
+        self.fingers_indices = np.array([18, 19])
         self.neutral_joint_values = np.array([0.00, 0.00, 0.00, 0.00, 0.00, -1.21, 0.00, -2.35, 0.00, 1.26, 0.79, 0.00, 0.00])
 
-        self.ee_link = 19
+        self.ee_link = 20
         self.sim.set_lateral_friction(self.body_name, self.fingers_indices[0], lateral_friction=1.0)
         self.sim.set_lateral_friction(self.body_name, self.fingers_indices[1], lateral_friction=1.0)
         self.sim.set_spinning_friction(self.body_name, self.fingers_indices[0], spinning_friction=0.001)
@@ -200,7 +200,7 @@ class MobilePanda(PyBulletRobot):
         wheels = self.throttle_to_wheel_speed(5*wheels[0],5*wheels[1])
         action = action[2:].copy()
         if self.control_type == "ee":
-            ee_displacement = action[:3]
+            ee_displacement = action[:4]
             target_arm_angles = self.ee_displacement_to_target_arm_angles(ee_displacement)
         else:
             arm_joint_ctrl = action[:7]
@@ -230,7 +230,7 @@ class MobilePanda(PyBulletRobot):
         forces=self.joint_forces[4:],
         )
 
-    def ee_displacement_to_target_arm_angles(self, ee_displacement: np.ndarray) -> np.ndarray:
+    def ee_displacement_to_target_arm_angles(self, displacement: np.ndarray) -> np.ndarray:
         """Compute the target arm angles from the end-effector displacement.
 
         Args:
@@ -239,15 +239,23 @@ class MobilePanda(PyBulletRobot):
         Returns:
             np.ndarray: Target arm angles, as the angles of the 7 arm joints.
         """
-        ee_displacement = ee_displacement[:3] * 0.05  # limit maximum change in position
+        ee_displacement = displacement[:3] * 0.05  # limit maximum change in position
         # get the current position and the target position
         ee_position = self.get_ee_position()
         target_ee_position = ee_position + ee_displacement
+
+        ee_orientation = self.get_ee_orientation()
+        target_ee_orientation = np.array(self.sim.physics_client.getEulerFromQuaternion(ee_orientation))
+        target_ee_orientation[0] = np.pi
+        target_ee_orientation[1] =0
+        target_ee_orientation[2] += displacement[3] * 0.03
+        target_ee_orientation = self.sim.physics_client.getQuaternionFromEuler(target_ee_orientation)
+
         # Clip the height target. For some reason, it has a great impact on learning
         target_ee_position[2] = np.max((0, target_ee_position[2]))
         # compute the new joint angles
         target_arm_angles = self.inverse_kinematics(
-            link=self.ee_link, position=target_ee_position, orientation=np.array([1.0, 0.0, 0.0, 0.0])
+            link=self.ee_link, position=target_ee_position, orientation=target_ee_orientation
         )
         target_arm_angles = target_arm_angles[4:11]  # remove fingers angles
         return target_arm_angles
@@ -263,7 +271,7 @@ class MobilePanda(PyBulletRobot):
         """
         arm_joint_ctrl = arm_joint_ctrl * 0.05  # limit maximum change in position
         # get the current position and the target position
-        current_arm_joint_angles = np.array([self.get_joint_angle(joint=i+4) for i in range(7)])
+        current_arm_joint_angles = np.array([self.get_joint_angle(joint) for joint in self.joint_indices[4:-2]])
         target_arm_angles = current_arm_joint_angles + arm_joint_ctrl
         return target_arm_angles
     
@@ -291,9 +299,9 @@ class MobilePanda(PyBulletRobot):
 
     def reset(self) -> None:
         self.set_joint_neutral()
-        rand = (np.random.uniform(size=3)-0.5)
-        rand[2]=0
-        self.sim.set_base_pose(self.body_name, position=self.base_position+rand, orientation=np.array([0.0, 0.0, (np.random.uniform()-0.5)]))
+        rand = 3*np.random.uniform(size=3)
+        rand[2]=-0.4
+        self.sim.set_base_pose(self.body_name, position=rand, orientation=np.array([0.0, 0.0, 2*np.pi*np.random.uniform()]))
 
 
     def set_joint_neutral(self) -> None:
@@ -309,6 +317,10 @@ class MobilePanda(PyBulletRobot):
     def get_ee_position(self) -> np.ndarray:
         """Returns the position of the end-effector as (x, y, z)"""
         return self.get_link_position(self.ee_link)
+    
+    def get_ee_orientation(self) -> np.ndarray:
+        """Returns the orientation of the end-effector as (x, y, z)"""
+        return self.get_link_orientation(self.ee_link)
 
     def get_ee_velocity(self) -> np.ndarray:
         """Returns the velocity of the end-effector as (vx, vy, vz)"""

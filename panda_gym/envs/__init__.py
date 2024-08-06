@@ -6,4 +6,5 @@ from panda_gym.envs.panda_tasks import (
     PandaReachEnv,
     PandaSlideEnv,
     PandaStackEnv,
+    PandaMobileReachEnv,
 )

@@ -396,7 +396,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
     </collision>
   </link>
   <joint name="panda_joint0" type="fixed">
-    <parent link="top_plate_link"/>
+    <parent link="user_rail_link"/>
     <child link="panda_link0"/>
   </joint>
 
