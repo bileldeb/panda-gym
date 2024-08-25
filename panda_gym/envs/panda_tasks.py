@@ -145,19 +145,19 @@ class PandaMobilePickAndPlaceEnv(RobotTaskEnv):
         render_height: int = 480,
         render_target_position: Optional[np.ndarray] = None,
         render_distance: float = 1.4,
-        render_yaw: float = 50,
-        render_pitch: float = -15,
+        render_yaw: float = 90,
+        render_pitch: float = -30,
         render_roll: float = 0,
     ) -> None:
         sim = PyBullet(render_mode=render_mode, renderer=renderer)
-        robot = MobilePanda(sim, block_gripper=False, base_position=np.array([-1.0, 0.0, -0.4]), control_type=control_type)
-        task = PickAndPlace(sim, reward_type=reward_type,table_length=0.4,table_width=0.4,table_offset=0.0,table_height=0.05,plane_Size=100)
+        robot = MobilePanda(sim, block_gripper=False, base_position=np.array([-0.8, -0.2, -0.4]), control_type=control_type)
+        task = PickAndPlace(sim, reward_type=reward_type,table_length=0.4,table_width=0.4,table_x_pos=0.0,table_y_pos=-0.2,plane_Size=100, second_table = True)
         super().__init__(
             robot,
             task,
             render_width=render_width,
             render_height=render_height,
-            render_target_position=render_target_position,
+            render_target_position=np.array([0,0.9,0]),
             render_distance=render_distance,
             render_yaw=render_yaw,
             render_pitch=render_pitch,

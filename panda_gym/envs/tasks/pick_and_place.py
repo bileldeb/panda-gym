@@ -17,9 +17,10 @@ class PickAndPlace(Task):
         goal_z_range: float = 0.2,
         obj_xy_range: float = 0.3,
         table_length: float = 1.1,
-        table_offset: float = -0.3,
-        table_height: float = 0.3,
+        table_x_pos: float = -0.3,
+        table_y_pos: float = 0,
         table_width: float = 0.7,
+        second_table: bool = False,
         plane_Size: float = 3.0,
 
     ) -> None:
@@ -32,17 +33,24 @@ class PickAndPlace(Task):
         self.obj_range_low = np.array([-obj_xy_range / 2, -obj_xy_range / 2, 0])
         self.obj_range_high = np.array([obj_xy_range / 2, obj_xy_range / 2, 0])
         self.table_length = table_length
-        self.table_height = table_height
-        self.table_offset = table_offset
+        self.table_x_pos = table_x_pos
+        self.table_y_pos = table_y_pos
         self.table_width = table_width
         self.plane_size = plane_Size
+        self.second_table = second_table
+        self.goal_y = 0
         with self.sim.no_rendering():
             self._create_scene()
 
     def _create_scene(self) -> None:
         """Create the scene."""
         self.sim.create_plane(z_offset=-0.4,size=self.plane_size)
-        self.sim.create_table(length=self.table_length, width=self.table_width, height=self.table_height, x_offset=self.table_offset)
+        self.sim.create_table(length=self.table_length, width=self.table_width,  height=0.4, x_offset=self.table_x_pos, y_offset=self.table_y_pos)
+        if self.second_table:
+            self.goal_y = 2
+            self.sim.create_table(length=self.table_length, width=self.table_width,  height=0.4, x_offset=0, y_offset=self.goal_y)
+            
+        
         self.sim.create_box(
             body_name="object",
             half_extents=np.ones(3) * self.object_size / 2,
@@ -80,17 +88,21 @@ class PickAndPlace(Task):
 
     def _sample_goal(self) -> np.ndarray:
         """Sample a goal."""
-        goal = np.array([0.0, 0.0, self.object_size / 2])  # z offset for the cube center
+        goal = np.array([0.0, self.goal_y, self.object_size / 2])  # z offset for the cube center
         noise = self.np_random.uniform(self.goal_range_low, self.goal_range_high)
         if self.np_random.random() < 0.3:
+            noise[2] = 0.0
+        if self.second_table:
             noise[2] = 0.0
         goal += noise
         return goal
 
     def _sample_object(self) -> np.ndarray:
         """Randomize start position of object."""
-        object_position = np.array([0.0, 0.0, self.object_size / 2])
+        object_position = np.array([0.0, self.table_y_pos, self.object_size / 2])
         noise = self.np_random.uniform(self.obj_range_low, self.obj_range_high)
+        if self.second_table:
+            noise[2] = 0.0
         object_position += noise
         return object_position
     

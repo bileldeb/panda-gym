@@ -185,7 +185,7 @@ class MobilePanda(PyBulletRobot):
         )
 
         self.fingers_indices = np.array([18, 19])
-        self.neutral_joint_values = np.array([0.00, 0.00, 0.00, 0.00, 0.00, -1.21, 0.00, -2.35, 0.00, 1.26, 0.79, 0.00, 0.00])
+        self.neutral_joint_values = np.array([0.00, 0.00, 0.00, 0.00, 0.00, 0.41, 0.00, -1.95, 0.00, 2.76, 0.79, 0.00, 0.00])
 
         self.ee_link = 20
         self.sim.set_lateral_friction(self.body_name, self.fingers_indices[0], lateral_friction=1.0)
@@ -299,9 +299,11 @@ class MobilePanda(PyBulletRobot):
 
     def reset(self) -> None:
         self.set_joint_neutral()
-        rand = 3*np.random.uniform(size=3)
-        rand[2]=-0.4
-        self.sim.set_base_pose(self.body_name, position=rand, orientation=np.array([0.0, 0.0, 2*np.pi*np.random.uniform()]))
+        rand = 0.1*np.random.uniform(size=3)
+        rand[2]=0
+        self.sim.set_base_pose(self.body_name, position=self.base_position, orientation=np.array([0.0, 0.0, 2*np.pi*np.random.uniform()]))
+        self.sim.set_base_pose(self.body_name, position=self.base_position, orientation=np.array([0.0, 0.0, 0]))
+
 
 
     def set_joint_neutral(self) -> None:

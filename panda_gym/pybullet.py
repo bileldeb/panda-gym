@@ -631,6 +631,7 @@ class PyBullet:
         width: float,
         height: float,
         x_offset: float = 0.0,
+        y_offset: float = 0.0,
         lateral_friction: Optional[float] = None,
         spinning_friction: Optional[float] = None,
     ) -> None:
@@ -650,7 +651,7 @@ class PyBullet:
             body_name="table",
             half_extents=np.array([length, width, height]) / 2,
             mass=0.0,
-            position=np.array([x_offset, 0.0, -height / 2]),
+            position=np.array([x_offset, y_offset, -height / 2]),
             specular_color=np.zeros(3),
             rgba_color=np.array([0.95, 0.95, 0.95, 1]),
             lateral_friction=lateral_friction,
