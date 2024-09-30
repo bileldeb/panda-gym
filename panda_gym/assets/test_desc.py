@@ -30,7 +30,7 @@ neutral_joint =        np.array([0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00,
 target_velocities = np.array([0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.0, 0.00, 0.00, 0.00, 0.00, 0.00])
 
 neutral_joint = np.array([0.00, 0.00, 0.00, 0.00, 0.00, 0.41, 0.00, -1.95, 0.00, 2.76, 0.79, 0.00, 0.00])
-
+neutral_joint = np.array([ 0,0,0, 0,-0.0581066,0.66762043,0.0586549 , -1.97301356 , 0.0629228  , 2.75354837 , 0.73150214 , 0,0       ])
 # p.setJointMotorControlArray(
 #             robot_id,
 #             jointIndices=joint_indices[:4],

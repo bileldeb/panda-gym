@@ -39,7 +39,13 @@ class Reach(Task):
         )
 
     def get_obs(self) -> np.ndarray:
-        return np.array([])  # no task-specific observation
+        #return np.zeros  # no task-specific observation
+        object_position = self.sim.get_base_position("target")
+        object_rotation = self.sim.get_base_rotation("target")
+        object_velocity = self.sim.get_base_velocity("target")
+        object_angular_velocity = self.sim.get_base_angular_velocity("target")
+        observation = np.concatenate([object_position, object_rotation, object_velocity, object_angular_velocity])
+        return observation
 
     def get_achieved_goal(self) -> np.ndarray:
         ee_position = np.array(self.get_ee_position())

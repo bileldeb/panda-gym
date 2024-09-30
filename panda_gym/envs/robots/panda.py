@@ -112,13 +112,34 @@ class Panda(PyBulletRobot):
         # end-effector position and velocity
         ee_position = np.array(self.get_ee_position())
         ee_velocity = np.array(self.get_ee_velocity())
+        ee_orientation = np.array(self.get_ee_orientation())
         # fingers opening
         if not self.block_gripper:
             fingers_width = self.get_fingers_width()
-            observation = np.concatenate((ee_position, ee_velocity, [fingers_width]))
+            observation = np.concatenate((ee_position, ee_velocity, ee_orientation, [fingers_width]))
         else:
-            observation = np.concatenate((ee_position, ee_velocity))
+            observation = np.concatenate((ee_position, ee_velocity, ee_orientation))
         return observation
+    
+    
+    def set_obs(self, observation) -> np.ndarray:
+        ee_position = observation[0:3]
+        ee_velocity = observation[3:6]
+        ee_orientation = observation[6:10]
+        fingers_width = observation[10] if not self.block_gripper else 0
+
+        target_arm_angles = self.inverse_kinematics(
+            link=self.ee_link, position=ee_position, orientation=ee_orientation
+        )
+        target_arm_angles[-2] = fingers_width / 2
+        target_arm_angles[-1] = fingers_width / 2
+        self.sim.set_joint_angles(self.body_name, joints=self.joint_indices[-9:], angles=target_arm_angles[-9:])
+
+    def get_ee_orientation(self) -> np.ndarray:
+        """Returns the orientation of the end-effector as (x, y, z)"""
+        return self.get_link_orientation(self.ee_link)
+
+
 
     def reset(self) -> None:
         self.set_joint_neutral()
@@ -167,7 +188,7 @@ class MobilePanda(PyBulletRobot):
     ) -> None:
         self.base_position = base_position if base_position is not None else np.zeros(3)
         self.block_gripper = block_gripper
-        self.control_type = "joint"#control_type
+        self.control_type = control_type
         n_action = 4 if self.control_type == "ee" else 7  # control (x, y z) if "ee", else, control the 7 joints
         n_action += 0 if self.block_gripper else 1
         n_action += 2 # left and right wheels
@@ -283,6 +304,7 @@ class MobilePanda(PyBulletRobot):
     def get_obs(self) -> np.ndarray:
         # end-effector position and velocity
         ee_position = np.array(self.get_ee_position())
+        ee_orientation = np.array(self.get_ee_orientation())
         ee_velocity = np.array(self.get_ee_velocity())
         bp = self.sim.get_base_position(self.body_name)
         bo = self.sim.get_base_orientation(self.body_name)
@@ -291,11 +313,29 @@ class MobilePanda(PyBulletRobot):
         # fingers opening
         if not self.block_gripper:
             fingers_width = self.get_fingers_width()
-            observation = np.concatenate((ee_position, ee_velocity, [fingers_width]))
+            observation = np.concatenate((ee_position, ee_velocity, ee_orientation, [fingers_width]))
         else:
-            observation = np.concatenate((ee_position, ee_velocity))
+            observation = np.concatenate((ee_position, ee_velocity, ee_orientation))
         observation = np.concatenate((bp,bo,bv,bav,observation))
         return observation
+    
+    def set_obs(self, observation) -> np.ndarray:
+        bp = observation[:3]
+        bo = observation[3:7]
+        bv = observation[7:10]
+        bav = observation[10:13]
+        ee_position = observation[13:16]
+        ee_velocity = observation[16:19]
+        ee_orientation = observation[19:23]
+        fingers_width = observation[23] if not self.block_gripper else 0
+
+        self.sim.set_base_pose(self.body_name, position=bp, orientation=bo)
+        target_arm_angles = self.inverse_kinematics(
+            link=self.ee_link, position=ee_position, orientation=ee_orientation
+        )
+        target_arm_angles[-2] = fingers_width / 2
+        target_arm_angles[-1] = fingers_width / 2
+        self.sim.set_joint_angles(self.body_name, joints=self.joint_indices[-9:], angles=target_arm_angles[-9:])
 
     def reset(self) -> None:
         self.set_joint_neutral()

@@ -196,6 +196,16 @@ class Task(ABC):
             raise RuntimeError("No goal yet, call reset() first")
         else:
             return self.goal.copy()
+        
+    #@abstractmethod
+    def show_hindsight_goal(self) -> None:
+        """Shows hindsight goal"""
+        pass
+
+    #@abstractmethod
+    def hide_hindsight_goal(self) -> None:
+        """Hides hindsight goal"""
+        pass
 
     @abstractmethod
     def is_success(self, achieved_goal: np.ndarray, desired_goal: np.ndarray, info: Dict[str, Any] = {}) -> np.ndarray:
@@ -284,11 +294,12 @@ class RobotTaskEnv(gym.Env):
         self.target_offset =None # task.target_offset
         self.target_in_the_air =None # task.target_in_the_air
         self.height_offset =None # task.height_offset
-        self.initial_state =None # task.initial_state
+        self._initial_state =None # task.initial_state
         self.initial_gripper_xpos =None # robot.initial_gripper_xpos
 
     def _get_obs(self) -> Dict[str, np.ndarray]:
         robot_obs = self.robot.get_obs().astype(np.float32)  # robot state
+        self.robot_obs_dim = len(robot_obs)
         task_obs = self.task.get_obs().astype(np.float32)  # object position, velocity, etc...
         observation = np.concatenate([robot_obs, task_obs])
         achieved_goal = self.task.get_achieved_goal().astype(np.float32)
@@ -310,6 +321,7 @@ class RobotTaskEnv(gym.Env):
             self.robot.reset()
             self.task.reset()
         observation = self._get_obs()
+        self._initial_state = observation["observation"]
         info = {"is_success": self.task.is_success(observation["achieved_goal"], self.task.get_goal())}
         return observation, info
 
@@ -341,13 +353,21 @@ class RobotTaskEnv(gym.Env):
         self._saved_goal.pop(state_id)
         self.sim.remove_state(state_id)
 
-    @property
-    def goal(self):
+    def get_goal(self):
         return self.task.goal
     
-    @goal.setter
-    def goal(self,value):
+    def set_goal(self,value):
         self.task.goal = value
+        with self.sim.no_rendering():
+            self.task.show_hindsight_goal()
+
+    def get_initial_state(self):
+        return self._initial_state.copy()
+    
+    def set_initial_state(self,value):
+        self._initial_state = value.copy()
+        with self.sim.no_rendering():
+            self.robot.set_obs(value[:self.robot_obs_dim].copy())
 
     def step(self, action: np.ndarray) -> Tuple[Dict[str, np.ndarray], float, bool, bool, Dict[str, Any]]:
         self.robot.set_action(action)

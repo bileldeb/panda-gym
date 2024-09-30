@@ -7,4 +7,5 @@ from panda_gym.envs.panda_tasks import (
     PandaSlideEnv,
     PandaStackEnv,
     PandaMobileReachEnv,
+    PandaMobileSlideEnv,
 )

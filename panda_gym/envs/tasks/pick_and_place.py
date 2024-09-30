@@ -64,7 +64,16 @@ class PickAndPlace(Task):
             mass=0.0,
             ghost=True,
             position=np.array([0.0, 0.0, 0.05]),
-            rgba_color=np.array([0.1, 0.9, 0.1, 0.3]),
+            rgba_color=np.array([0.1, 0.9, 0.1, 0.5]),
+        )
+
+        self.sim.create_box(
+            body_name="hindsight_target",
+            half_extents=np.ones(3) * self.object_size / 2,
+            mass=0.0,
+            ghost=True,
+            position=np.array([0.0, 0.0, -99]),
+            rgba_color=np.array([0.9, 0.1, 0.1, 0.3]),
         )
 
     def get_obs(self) -> np.ndarray:
@@ -75,12 +84,20 @@ class PickAndPlace(Task):
         object_angular_velocity = self.sim.get_base_angular_velocity("object")
         observation = np.concatenate([object_position, object_rotation, object_velocity, object_angular_velocity])
         return observation
+    
+    def show_hindsight_goal(self):
+        self.sim.set_base_pose("hindsight_target", self.goal, np.array([0.0, 0.0, 0.0, 1.0]))
+
+    def hide_hindsight_goal(self):
+        self.sim.set_base_pose("hindsight_target", np.array([0.0, 0.0, -99]), np.array([0.0, 0.0, 0.0, 1.0]))
+
 
     def get_achieved_goal(self) -> np.ndarray:
         object_position = np.array(self.sim.get_base_position("object"))
         return object_position
 
     def reset(self) -> None:
+        self.hide_hindsight_goal()
         self.goal = self._sample_goal()
         object_position = self._sample_object()
         self.sim.set_base_pose("target", self.goal, np.array([0.0, 0.0, 0.0, 1.0]))

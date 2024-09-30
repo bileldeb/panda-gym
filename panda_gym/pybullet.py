@@ -647,6 +647,7 @@ class PyBullet:
             spinning_friction (float or None, optional): Spinning friction. If None, use the default pybullet
                 value. Defaults to None.
         """
+        # Create the table
         self.create_box(
             body_name="table",
             half_extents=np.array([length, width, height]) / 2,
@@ -657,6 +658,62 @@ class PyBullet:
             lateral_friction=lateral_friction,
             spinning_friction=spinning_friction,
         )
+
+        # Edge parameters
+        edge_height = 0.05  # Height of the edges above the table surface
+        edge_thickness = 0.02  # Thickness of the edge (width)
+        edge_length = length + edge_thickness * 2  # Extend slightly beyond the table
+        edge_width = width + edge_thickness * 2  # Extend slightly beyond the table
+
+        # Create the edges (four boxes around the table)
+        # Front edge
+        self.create_box(
+            body_name="edge_front",
+            half_extents=np.array([edge_length / 2, edge_thickness / 2, edge_height / 2]),
+            mass=0.0,
+            position=np.array([x_offset, y_offset - width / 2 - edge_thickness / 2, edge_height / 2]),
+            specular_color=np.zeros(3),
+            rgba_color=np.array([0.8, 0.8, 0.8, 1]),
+            lateral_friction=lateral_friction,
+            spinning_friction=spinning_friction,
+        )
+
+        # Back edge
+        self.create_box(
+            body_name="edge_back",
+            half_extents=np.array([edge_length / 2, edge_thickness / 2, edge_height / 2]),
+            mass=0.0,
+            position=np.array([x_offset, y_offset + width / 2 + edge_thickness / 2, edge_height / 2]),
+            specular_color=np.zeros(3),
+            rgba_color=np.array([0.8, 0.8, 0.8, 1]),
+            lateral_friction=lateral_friction,
+            spinning_friction=spinning_friction,
+        )
+
+        # Left edge
+        self.create_box(
+            body_name="edge_left",
+            half_extents=np.array([edge_thickness / 2, edge_width / 2, edge_height / 2]),
+            mass=0.0,
+            position=np.array([x_offset - length / 2 - edge_thickness / 2, y_offset, edge_height / 2]),
+            specular_color=np.zeros(3),
+            rgba_color=np.array([0.8, 0.8, 0.8, 1]),
+            lateral_friction=lateral_friction,
+            spinning_friction=spinning_friction,
+        )
+
+        # Right edge
+        self.create_box(
+            body_name="edge_right",
+            half_extents=np.array([edge_thickness / 2, edge_width / 2, edge_height / 2]),
+            mass=0.0,
+            position=np.array([x_offset + length / 2 + edge_thickness / 2, y_offset, edge_height / 2]),
+            specular_color=np.zeros(3),
+            rgba_color=np.array([0.8, 0.8, 0.8, 1]),
+            lateral_friction=lateral_friction,
+            spinning_friction=spinning_friction,
+        )
+
 
     def set_lateral_friction(self, body: str, link: int, lateral_friction: float) -> None:
         """Set the lateral friction of a link.
